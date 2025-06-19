@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chatbot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        
+        .chat-container {
+            max-height: 500px;
+            overflow-y: auto;
+            background-color: white;
+        }
+        
+        .animate-button {
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .message {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-box {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen bg-gray-100">
+        <div class="container mx-auto px-4 py-8">
+            <div class="max-w-4xl mx-auto">
+                <!-- Landing Page Section -->
+                <div class="text-center mb-12 bg-white p-8 rounded-lg shadow-md">
+                    <h1 class="text-4xl font-bold text-indigo-600 mb-4">Welcome to AI Chatbot</h1>
+                    <p class="text-xl text-gray-600 mb-8">Experience the power of AI-driven conversations</p>
+                    <button id="startChat" class="animate-button bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700">
+                        Start Chatting
+                    </button>
+                </div>
+
+                <!-- Chat Interface -->
+                <div id="chatInterface" class="chat-box p-6 hidden">
+                    <div class="chat-container mb-4 p-4" id="chatMessages">
+                        <!-- Messages will be inserted here -->
+                    </div>
+                    
+                    <div class="flex gap-4 bg-white p-4 rounded-b-lg">
+                        <input type="text" id="messageInput" 
+                               class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:border-indigo-500" 
+                               placeholder="Type your message...">
+                        <button id="sendMessage" 
+                                class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+    $(document).ready(function() {
+        $('#startChat').click(function() {
+            $(this).parent().slideUp();
+            $('#chatInterface').slideDown();
+        });
+        
+        $('#sendMessage').click(sendMessage);
+        $('#messageInput').keypress(function(e) {
+            if(e.which == 13) sendMessage();
+        });
+        
+        function sendMessage() {
+            const message = $('#messageInput').val().trim();
+            if(!message) return;
+            
+            // Add user message
+            addMessage('You', message);
+            $('#messageInput').val('');
+            
+            // Send to backend
+            $.ajax({
+                url: '/',
+                method: 'POST',
+                data: {
+                    message: message,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    addMessage('Bot', response.response);
+                },
+                error: function() {
+                    addMessage('System', 'Sorry, there was an error processing your message.');
+                }
+            });
+        }
+        
+        function addMessage(sender, text) {
+            const messageDiv = $(`
+                <div class="message mb-4 ${sender === 'You' ? 'text-right' : ''}">
+                    <div class="inline-block max-w-[70%] ${sender === 'You' ? 'bg-indigo-100' : 'bg-gray-100'} rounded-lg px-4 py-2">
+                        <div class="font-semibold ${sender === 'You' ? 'text-indigo-600' : 'text-gray-600'}">${sender}</div>
+                        <div class="text-gray-700">${text}</div>
+                    </div>
+                </div>
+            `);
+            
+            $('#chatMessages').append(messageDiv);
+            $('#chatMessages').scrollTop($('#chatMessages')[0].scrollHeight);
+        }
+    });
+    </script>
+</body>
+</html>
